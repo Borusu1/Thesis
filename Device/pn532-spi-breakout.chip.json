@@ -1,0 +1,12 @@
+{
+  "name": "PN532 SPI Breakout",
+  "author": "OpenAI Codex",
+  "pins": [
+    "VCC",
+    "GND",
+    "SCK",
+    "MISO",
+    "MOSI",
+    "SS"
+  ]
+}

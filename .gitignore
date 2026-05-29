@@ -1,0 +1,51 @@
+# Word temp files
+~$*
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+
+# Node / Expo
+node_modules/
+.expo/
+dist/
+*.tsbuildinfo
+
+# PlatformIO / Arduino
+Device/.pio/
+Device/.pioenvs/
+
+# Temp unpack
+temp_docx/
+
+# macOS
+.DS_Store
+
+# Env files
+.env
+.env.local
+*.env
+
+# Exclude other subprojects
+Backend/
+Frontend/
+
+# Claude / Playwright
+.claude/
+.playwright-cli/
+
+# PDFs and Word docs
+*.pdf
+*.docx
+*.drawio
+
+# Diagrams folder
+Діаграми/

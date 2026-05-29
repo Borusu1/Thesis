@@ -1,0 +1,185 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="920" viewBox="0 0 1400 920">
+  <defs>
+    <style>
+      .bg { fill: #ffffff; }
+      .panel { fill: #f6f6f6; stroke: #111111; stroke-width: 2; }
+      .device { fill: #fcfcfc; stroke: #111111; stroke-width: 1.6; }
+      .title-box { fill: #111111; }
+      .title-text { fill: #ffffff; font-family: Arial, Helvetica, sans-serif; font-size: 24px; font-weight: 700; }
+      .label { fill: #111111; font-family: Arial, Helvetica, sans-serif; font-size: 22px; }
+      .small { fill: #111111; font-family: Arial, Helvetica, sans-serif; font-size: 18px; }
+      .pin { fill: #111111; font-family: Arial, Helvetica, sans-serif; font-size: 20px; }
+      .wire { stroke: #222222; stroke-width: 2.2; fill: none; stroke-linecap: square; stroke-linejoin: miter; }
+      .divider { stroke: #111111; stroke-width: 1.5; }
+      .coil { fill: none; stroke: #111111; stroke-width: 1.5; }
+      .gnd { fill: #111111; font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: 700; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1400" height="920"/>
+  <text class="label" x="700" y="34" text-anchor="middle">Схема електрична функціональна складського термінала на базі ESP32-S3</text>
+
+  <!-- TFT block -->
+  <rect class="title-box" x="40" y="80" width="200" height="34" rx="2"/>
+  <text class="title-text" x="140" y="105" text-anchor="middle">ILI9341 TFT</text>
+  <rect class="panel" x="40" y="114" width="340" height="300"/>
+  <line class="divider" x1="290" y1="114" x2="290" y2="414"/>
+  <rect class="device" x="70" y="175" width="190" height="120"/>
+  <text class="small" x="165" y="235" text-anchor="middle">320x240 TFT</text>
+  <text class="pin" x="305" y="148">VCC</text>
+  <text class="pin" x="305" y="184">GND</text>
+  <text class="pin" x="305" y="220">CS</text>
+  <text class="pin" x="305" y="256">RST</text>
+  <text class="pin" x="305" y="292">D/C</text>
+  <text class="pin" x="305" y="328">MOSI</text>
+  <text class="pin" x="305" y="364">SCK</text>
+  <text class="pin" x="305" y="400">MISO</text>
+
+  <!-- MCU -->
+  <rect class="title-box" x="560" y="52" width="280" height="34" rx="2"/>
+  <text class="title-text" x="700" y="77" text-anchor="middle">ESP32-S3 DevKitC-1</text>
+  <rect class="panel" x="540" y="86" width="320" height="540"/>
+  <line class="divider" x1="620" y1="86" x2="620" y2="626"/>
+  <line class="divider" x1="780" y1="86" x2="780" y2="626"/>
+  <text class="label" x="700" y="350" text-anchor="middle">MCU</text>
+  <text class="small" x="700" y="382" text-anchor="middle">ESP32-S3</text>
+
+  <!-- Left side pins for TFT/buttons -->
+  <text class="pin" x="556" y="148">3V3</text>
+  <text class="pin" x="556" y="184">GND</text>
+  <text class="pin" x="566" y="220">4</text>
+  <text class="pin" x="566" y="256">5</text>
+  <text class="pin" x="566" y="292">6</text>
+  <text class="pin" x="566" y="328">7</text>
+  <text class="pin" x="556" y="364">15</text>
+  <text class="pin" x="556" y="400">16</text>
+  <text class="pin" x="566" y="516">9</text>
+  <text class="pin" x="556" y="552">18</text>
+  <text class="pin" x="556" y="588">21</text>
+
+  <!-- Right side pins for PN532/SD/LED -->
+  <text class="pin" x="804" y="148">3V3</text>
+  <text class="pin" x="804" y="184">RST</text>
+  <text class="pin" x="804" y="220">GND</text>
+  <text class="pin" x="814" y="256">7</text>
+  <text class="pin" x="804" y="292">15</text>
+  <text class="pin" x="804" y="328">16</text>
+  <text class="pin" x="804" y="364">17</text>
+  <text class="pin" x="804" y="436">3V3</text>
+  <text class="pin" x="804" y="472">GND</text>
+  <text class="pin" x="814" y="508">11</text>
+  <text class="pin" x="804" y="544">12</text>
+  <text class="pin" x="804" y="580">13</text>
+  <text class="pin" x="804" y="616">14</text>
+  <text class="pin" x="814" y="688">10</text>
+  <text class="pin" x="824" y="724">1</text>
+
+  <rect class="device" x="645" y="626" width="110" height="64"/>
+  <text class="small" x="700" y="665" text-anchor="middle">USB</text>
+
+  <!-- PN532 block -->
+  <rect class="title-box" x="1020" y="80" width="180" height="34" rx="2"/>
+  <text class="title-text" x="1110" y="105" text-anchor="middle">PN532</text>
+  <rect class="panel" x="940" y="114" width="350" height="320"/>
+  <line class="divider" x1="1045" y1="114" x2="1045" y2="434"/>
+  <text class="pin" x="958" y="148">VCC</text>
+  <text class="pin" x="958" y="184">RST</text>
+  <text class="pin" x="958" y="220">GND</text>
+  <text class="pin" x="958" y="256">MOSI</text>
+  <text class="pin" x="958" y="292">SCK</text>
+  <text class="pin" x="958" y="328">MISO</text>
+  <text class="pin" x="958" y="364">SS</text>
+  <rect class="device" x="1080" y="150" width="170" height="210"/>
+  <rect class="device" x="1118" y="190" width="94" height="130"/>
+  <path class="coil" d="M1095 180 q50 18 0 36 q-35 14 0 28 q50 18 0 36 q-35 14 0 28 q50 18 0 36"/>
+  <path class="coil" d="M1115 180 q50 18 0 36 q-35 14 0 28 q50 18 0 36 q-35 14 0 28 q50 18 0 36"/>
+  <path class="coil" d="M1135 180 q50 18 0 36 q-35 14 0 28 q50 18 0 36 q-35 14 0 28 q50 18 0 36"/>
+  <text class="small" x="1165" y="388" text-anchor="middle">13.56 MHz NFC reader</text>
+
+  <!-- SD block -->
+  <rect class="title-box" x="1030" y="470" width="170" height="34" rx="2"/>
+  <text class="title-text" x="1115" y="495" text-anchor="middle">microSD</text>
+  <rect class="panel" x="940" y="504" width="350" height="150"/>
+  <line class="divider" x1="1060" y1="504" x2="1060" y2="654"/>
+  <text class="pin" x="958" y="540">VCC</text>
+  <text class="pin" x="958" y="576">GND</text>
+  <text class="pin" x="958" y="612">DI</text>
+  <text class="pin" x="1080" y="540">SCK</text>
+  <text class="pin" x="1080" y="576">DO</text>
+  <text class="pin" x="1080" y="612">CS</text>
+  <rect class="device" x="1140" y="526" width="100" height="96" rx="4"/>
+  <text class="small" x="1190" y="580" text-anchor="middle">SD</text>
+
+  <!-- Buttons -->
+  <rect class="title-box" x="90" y="670" width="140" height="34" rx="2"/>
+  <text class="title-text" x="160" y="695" text-anchor="middle">Buttons</text>
+  <rect class="panel" x="40" y="704" width="460" height="150"/>
+  <rect class="device" x="70" y="752" width="100" height="46" rx="8"/>
+  <rect class="device" x="200" y="752" width="100" height="46" rx="8"/>
+  <rect class="device" x="330" y="752" width="100" height="46" rx="8"/>
+  <text class="small" x="120" y="782" text-anchor="middle">UP</text>
+  <text class="small" x="250" y="782" text-anchor="middle">DOWN</text>
+  <text class="small" x="380" y="782" text-anchor="middle">OK</text>
+  <text class="small" x="120" y="828" text-anchor="middle">GPIO9</text>
+  <text class="small" x="250" y="828" text-anchor="middle">GPIO18</text>
+  <text class="small" x="380" y="828" text-anchor="middle">GPIO21</text>
+  <text class="gnd" x="120" y="848" text-anchor="middle">GND</text>
+  <text class="gnd" x="250" y="848" text-anchor="middle">GND</text>
+  <text class="gnd" x="380" y="848" text-anchor="middle">GND</text>
+
+  <!-- LEDs -->
+  <rect class="title-box" x="1040" y="690" width="120" height="34" rx="2"/>
+  <text class="title-text" x="1100" y="715" text-anchor="middle">LEDs</text>
+  <rect class="panel" x="960" y="724" width="300" height="120"/>
+  <rect class="device" x="1015" y="748" width="18" height="60"/>
+  <circle cx="1024" cy="742" r="18" fill="#2da54a" stroke="#111111" stroke-width="2"/>
+  <text class="small" x="1024" y="828" text-anchor="middle">GPIO10</text>
+  <text class="small" x="1024" y="846" text-anchor="middle">220Ω</text>
+  <rect class="device" x="1135" y="748" width="18" height="60"/>
+  <circle cx="1144" cy="742" r="18" fill="#d23b3b" stroke="#111111" stroke-width="2"/>
+  <text class="small" x="1144" y="828" text-anchor="middle">GPIO1</text>
+  <text class="small" x="1144" y="846" text-anchor="middle">220Ω</text>
+
+  <!-- TFT wires: straight and ordered -->
+  <path class="wire" d="M540 140 H290"/>
+  <path class="wire" d="M540 176 H290"/>
+  <path class="wire" d="M540 212 H290"/>
+  <path class="wire" d="M540 248 H290"/>
+  <path class="wire" d="M540 284 H290"/>
+  <path class="wire" d="M540 320 H290"/>
+  <path class="wire" d="M540 356 H290"/>
+  <path class="wire" d="M540 392 H290"/>
+
+  <!-- PN532 wires: straight and ordered -->
+  <path class="wire" d="M860 140 H940"/>
+  <path class="wire" d="M860 176 H940"/>
+  <path class="wire" d="M860 212 H940"/>
+  <path class="wire" d="M860 248 H940"/>
+  <path class="wire" d="M860 284 H940"/>
+  <path class="wire" d="M860 320 H940"/>
+  <path class="wire" d="M860 356 H940"/>
+
+  <!-- SD wires: straight and ordered -->
+  <path class="wire" d="M860 428 H940 V540"/>
+  <path class="wire" d="M860 464 H940 V576"/>
+  <path class="wire" d="M860 500 H940 V612"/>
+  <path class="wire" d="M860 536 H1080 V540"/>
+  <path class="wire" d="M860 572 H1080 V576"/>
+  <path class="wire" d="M860 608 H1080 V612"/>
+
+  <!-- Button wires -->
+  <path class="wire" d="M540 512 H500 V728 H120 V752"/>
+  <path class="wire" d="M540 548 H490 V718 H250 V752"/>
+  <path class="wire" d="M540 584 H480 V708 H380 V752"/>
+
+  <!-- Button grounds -->
+  <path class="wire" d="M120 798 V840"/>
+  <path class="wire" d="M250 798 V840"/>
+  <path class="wire" d="M380 798 V840"/>
+
+  <!-- LED wires -->
+  <path class="wire" d="M860 680 H930 V778 H1015"/>
+  <path class="wire" d="M860 716 H920 V788 H1135"/>
+  <path class="wire" d="M1024 760 V840"/>
+  <path class="wire" d="M1144 760 V840"/>
+</svg>
