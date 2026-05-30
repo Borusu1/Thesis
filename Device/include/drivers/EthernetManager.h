@@ -108,6 +108,37 @@ public:
         restoreSpi();
     }
 
+    // Force an immediate hardware-reset + DHCP (re)acquire, bypassing the
+    // internal retry timer. The caller MUST guarantee a quiet RF window
+    // (WiFi radio off) — otherwise WiFi jams the W5200 RX and DHCP fails.
+    // Returns true if an IP was obtained.
+    bool forceReacquire() {
+        if (!hardwarePresent_) return false;
+
+        restoreSpi();
+        hardwareReset();
+        prepareSpi();
+        Ethernet.init(device::board::ETH_CS);
+
+        Serial.println("[eth] retrying DHCP...");
+        // Generous window: the PHY just re-negotiated link after the reset and
+        // the WiFi radio has only just powered down, so give DHCP time to land.
+        const int result = Ethernet.begin(mac_, 5000, 2000);
+        const IPAddress ip = Ethernet.localIP();
+        restoreSpi();
+
+        if (result != 0 && ip != IPAddress(0, 0, 0, 0)) {
+            hasIp_ = true;
+            cachedIp_ = ip;
+            Serial.printf("[eth] DHCP ok ip=%s\n", ip.toString().c_str());
+            return true;
+        }
+        Serial.println("[eth] DHCP no response");
+        return false;
+    }
+
+    bool hardwarePresent() const { return hardwarePresent_; }
+
     bool isConnected() const {
         return hardwarePresent_ && hasIp_;
     }

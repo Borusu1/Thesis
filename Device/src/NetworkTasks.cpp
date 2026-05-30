@@ -13,19 +13,21 @@ void startNetworkIfConfigured() {
         return;
     }
 
-    // Do NOT start WiFi while Ethernet is up: a concurrently-scanning WiFi STA
-    // jams the W5200's packet reception (TCP handshakes never complete).
-    // WiFi is brought up only as a fallback when Ethernet is not connected.
+    // Remember WiFi credentials for fallback, but do NOT start WiFi here.
+    // A live/scanning WiFi STA jams the W5200's packet reception, so Ethernet
+    // and WiFi can never run at the same time. NetworkManager::maintain() owns
+    // the switching: it keeps WiFi off while Ethernet is the active link and
+    // only brings WiFi up (and periodically probes Ethernet in a quiet RF
+    // window) when Ethernet is unavailable.
+    g_network.setWifiConfig(g_bootstrapConfig);
+
     if (g_network.isEthernetConnected()) {
         Serial.println("[net] ETH up — WiFi stays off (fallback only)");
-        g_controller.updateNetworkStatus(g_networkStatus);
     } else {
-        Serial.printf("[wifi] begin ssid=%s\n", g_bootstrapConfig.wifiSsid.c_str());
-        g_network.beginWifi(g_bootstrapConfig);
-        Serial.println("[net] ETH not up — waiting for WiFi");
-        g_networkStatus.detail.assign("WiFi starting");
-        g_controller.updateNetworkStatus(g_networkStatus);
+        Serial.println("[net] ETH not up — WiFi fallback will start, ETH probed periodically");
+        g_networkStatus.detail.assign("Connecting...");
     }
+    g_controller.updateNetworkStatus(g_networkStatus);
 }
 
 bool syncProductsFromBackend(uint32_t nowMs, bool force) {

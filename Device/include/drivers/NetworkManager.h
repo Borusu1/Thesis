@@ -18,17 +18,65 @@ public:
         return eth_.begin();
     }
 
-    // Start WiFi with credentials from config (fallback if ETH failed).
-    void beginWifi(const device::domain::DeviceBootstrapConfig& config) {
+    // Store WiFi credentials for fallback use. Does NOT start WiFi — maintain()
+    // brings it up only when Ethernet is unavailable (see note below).
+    void setWifiConfig(const device::domain::DeviceBootstrapConfig& config) {
         wifiConfig_ = &config;
-        wifi_.begin(config);
     }
 
-    // Maintain connections: renew DHCP, reconnect WiFi if needed.
-    // WiFi always runs as hot standby — instant failover when ETH cable is pulled.
+    // Maintain connections, enforcing that Ethernet and WiFi never run at the
+    // same time: a live/scanning WiFi STA jams the W5200's packet reception, so
+    // a concurrent WiFi was preventing Ethernet TCP/DHCP from ever completing.
+    //
+    // Priority is Ethernet-first:
+    //  - ETH connected   -> keep WiFi radio off, just renew the DHCP lease.
+    //  - ETH down + W5200 present -> periodically stop WiFi to open a quiet RF
+    //    window and force an Ethernet (re)acquire; on success WiFi stays off.
+    //  - ETH still down   -> run WiFi as the fallback link.
     void maintain(uint32_t nowMs) {
-        eth_.maintain(nowMs);
+        if (eth_.isConnected()) {
+            if (wifi_.isStarted()) {
+                wifi_.stop();  // free the air so the W5200 keeps receiving
+            }
+            eth_.maintain(nowMs);  // DHCP lease renewal only
+            return;
+        }
+
+        // Ethernet is down. If the W5200 is present, periodically grab a quiet
+        // RF window (WiFi off) and try to (re)acquire Ethernet.
+        if (eth_.hardwarePresent() &&
+            (lastEthProbeAtMs_ == 0 || nowMs - lastEthProbeAtMs_ >= kEthProbeIntervalMs)) {
+            lastEthProbeAtMs_ = nowMs;
+            if (wifi_.isStarted()) {
+                wifi_.stop();
+                // Let the WiFi radio fully power down before touching the W5200,
+                // otherwise residual RF activity still jams its reception.
+                delay(300);
+            }
+            if (eth_.forceReacquire()) {
+                // Ethernet is back. If the WiFi radio was ever powered on this
+                // session, turning it off (WIFI_OFF) frees enough air for DHCP
+                // to land, but residual RF/coexistence still corrupts larger
+                // TCP payloads (HTTP requests arrive malformed at the server).
+                // The only reliable cure is a clean boot with WiFi never
+                // initialized, so restart into the known-good Ethernet path.
+                // Pending operations are persisted on SD, so nothing is lost.
+                if (wifiEverStarted_) {
+                    Serial.println("[net] ETH recovered after WiFi — restarting for a clean Ethernet stack");
+                    Serial.flush();
+                    delay(50);
+                    ESP.restart();
+                }
+                return;  // Ethernet is back; WiFi stays off
+            }
+        }
+
+        // Ethernet still unavailable — use WiFi as the fallback link.
         if (wifiConfig_ != nullptr) {
+            if (!wifi_.isStarted()) {
+                wifi_.begin(*wifiConfig_);
+                wifiEverStarted_ = true;
+            }
             wifi_.ensureConnected(nowMs);
         }
     }
@@ -75,6 +123,11 @@ private:
     WiFiClient       wifiPlainClient_;
     WiFiClientSecure wifiSecureClient_;
     const device::domain::DeviceBootstrapConfig* wifiConfig_ = nullptr;
+
+    // How often to interrupt WiFi fallback to probe for Ethernet recovery.
+    static constexpr uint32_t kEthProbeIntervalMs = 15000;
+    uint32_t lastEthProbeAtMs_ = 0;
+    bool wifiEverStarted_ = false;
 };
 
 }  // namespace device::drivers
