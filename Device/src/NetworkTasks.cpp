@@ -13,15 +13,15 @@ void startNetworkIfConfigured() {
         return;
     }
 
-    // Always start WiFi as a hot standby even if ETH is already up.
-    // This ensures instant failover when the cable is unplugged.
-    Serial.printf("[wifi] begin ssid=%s\n", g_bootstrapConfig.wifiSsid.c_str());
-    g_network.beginWifi(g_bootstrapConfig);
-
+    // Do NOT start WiFi while Ethernet is up: a concurrently-scanning WiFi STA
+    // jams the W5200's packet reception (TCP handshakes never complete).
+    // WiFi is brought up only as a fallback when Ethernet is not connected.
     if (g_network.isEthernetConnected()) {
-        Serial.println("[net] ETH up — WiFi started as hot standby");
+        Serial.println("[net] ETH up — WiFi stays off (fallback only)");
         g_controller.updateNetworkStatus(g_networkStatus);
     } else {
+        Serial.printf("[wifi] begin ssid=%s\n", g_bootstrapConfig.wifiSsid.c_str());
+        g_network.beginWifi(g_bootstrapConfig);
         Serial.println("[net] ETH not up — waiting for WiFi");
         g_networkStatus.detail.assign("WiFi starting");
         g_controller.updateNetworkStatus(g_networkStatus);

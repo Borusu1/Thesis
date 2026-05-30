@@ -7,7 +7,7 @@ namespace device::config {
 
 constexpr const char* kFirmwareName = "warehouse-terminal";
 constexpr const char* kFirmwareVersion = "0.6.2";
-constexpr const char* kDefaultWifiSsid = "disabled_Bodnar_iot";
+constexpr const char* kDefaultWifiSsid = "disBodnar_iot";
 constexpr const char* kDefaultWifiPassword = "0664995352";
 constexpr const char* kDefaultApiBaseUrl = "http://192.168.110.223:8000/api/v1";
 constexpr const char* kDeviceIdPrefix = "esp32s3-";
