@@ -101,7 +101,13 @@ bool runNetworkMaintenance(uint32_t nowMs) {
         currentScreen == device::ui::Screen::ModeMenu ||
         currentScreen == device::ui::Screen::SyncStatus;
 
-    g_network.maintain(nowMs);
+    // Only (re)connect from the main menu. Inside a working mode this would
+    // otherwise block the UI for seconds on each Ethernet DHCP probe, making
+    // offline work laggy. The interface state is left untouched in other
+    // screens, so already-established links keep working.
+    if (currentScreen == device::ui::Screen::ModeMenu) {
+        g_network.maintain(nowMs);
+    }
 
     const bool networkConnected = g_network.isConnected();
     const bool ethConnected     = g_network.isEthernetConnected();
