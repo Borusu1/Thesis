@@ -387,4 +387,4 @@ private:
     FixedString<32> lastUidHex_ {};
 };
 
-}  // namespace device::drivers
+}

@@ -9,26 +9,15 @@
 
 namespace device::drivers {
 
-// Manages WIZ820io (W5200) via FSPI with dynamic SPI pin switching.
-// TFT+PN532 also use FSPI (pins TFT_SCK/TFT_MISO/TFT_MOSI).
-// Call prepareSpi() before any W5200 transaction, restoreSpi() after.
-//
-// NOTE: Ethernet.linkStatus() is NOT used here.
-// On W5200, Ethernet_Generic returns LinkOFF regardless of physical state,
-// causing spurious disconnect events. Disconnect is instead detected via
-// DHCP lease renewal failure (Ethernet.maintain() return codes).
 class EthernetManager {
 public:
-    // Hardware reset + DHCP. Returns true if IP obtained.
-    // Sets hardwarePresent_ even when DHCP fails (cable unplugged at boot),
-    // so maintain() can retry DHCP later when the cable is plugged in.
+
     bool begin() {
         hardwareReset();
 
         prepareSpi();
         Ethernet.init(device::board::ETH_CS);
 
-        // Derive MAC from eFuse once — cached in mac_[] for reconnect retries.
         const uint64_t efuse = ESP.getEfuseMac();
         mac_[0] = 0x02; mac_[1] = 0x00;
         mac_[2] = static_cast<uint8_t>((efuse >> 32) & 0xFF);
@@ -44,7 +33,6 @@ public:
             return false;
         }
 
-        // Remember hardware is present even if DHCP failed (no cable at boot)
         hardwarePresent_ = true;
 
         const IPAddress ip = Ethernet.localIP();
@@ -61,22 +49,16 @@ public:
         return true;
     }
 
-    // Call periodically.
-    // - When connected: renews DHCP lease; clears IP on renewal failure.
-    // - When not connected: retries DHCP every kDhcpRetryIntervalMs.
     void maintain(uint32_t nowMs) {
         if (!hardwarePresent_) return;
 
-        // Rate-limit to avoid constant SPI pin-switching
         if (nowMs - lastMaintainAtMs_ < kMaintainIntervalMs) return;
         lastMaintainAtMs_ = nowMs;
 
         prepareSpi();
 
         if (hasIp_) {
-            // Ethernet.maintain() handles DHCP lease renewal internally.
-            // It returns non-zero failure codes only when the lease is expiring
-            // and renewal requests get no response — reliable indicator of link loss.
+
             const int rc = Ethernet.maintain();
             if (rc == DHCP_CHECK_RENEW_FAIL || rc == DHCP_CHECK_REBIND_FAIL) {
                 hasIp_ = false;
@@ -84,8 +66,7 @@ public:
                 Serial.printf("[eth] DHCP renewal failed (rc=%d) — link lost\n", rc);
             }
         } else if (nowMs - lastDhcpAttemptAtMs_ >= kDhcpRetryIntervalMs) {
-            // No IP — attempt DHCP. Hardware-reset first: after a link-down event
-            // the W5200 PHY state machine must be fully restarted before DHCP works.
+
             lastDhcpAttemptAtMs_ = nowMs;
 
             restoreSpi();
@@ -108,10 +89,6 @@ public:
         restoreSpi();
     }
 
-    // Force an immediate hardware-reset + DHCP (re)acquire, bypassing the
-    // internal retry timer. The caller MUST guarantee a quiet RF window
-    // (WiFi radio off) — otherwise WiFi jams the W5200 RX and DHCP fails.
-    // Returns true if an IP was obtained.
     bool forceReacquire() {
         if (!hardwarePresent_) return false;
 
@@ -121,8 +98,7 @@ public:
         Ethernet.init(device::board::ETH_CS);
 
         Serial.println("[eth] retrying DHCP...");
-        // Generous window: the PHY just re-negotiated link after the reset and
-        // the WiFi radio has only just powered down, so give DHCP time to land.
+
         const int result = Ethernet.begin(mac_, 5000, 2000);
         const IPAddress ip = Ethernet.localIP();
         restoreSpi();
@@ -147,14 +123,12 @@ public:
 
     EthernetClient& client() { return client_; }
 
-    // Switch global SPI to ETH pins (36/39/37). Call before any W5200 SPI op.
     void prepareSpi() const {
         SPI.end();
         SPI.begin(device::board::ETH_SCK, device::board::ETH_MISO,
                   device::board::ETH_MOSI, device::board::ETH_CS);
     }
 
-    // Restore global SPI to TFT/PN532 pins (15/16/7).
     static void restoreSpi() {
         SPI.end();
         SPI.begin(device::board::TFT_SCK, device::board::TFT_MISO,
@@ -170,8 +144,8 @@ private:
         delay(150);
     }
 
-    static constexpr uint32_t kMaintainIntervalMs  = 3000;  // SPI check every 3s
-    static constexpr uint32_t kDhcpRetryIntervalMs = 10000; // DHCP retry every 10s when no IP
+    static constexpr uint32_t kMaintainIntervalMs  = 3000;
+    static constexpr uint32_t kDhcpRetryIntervalMs = 10000;
 
     bool hardwarePresent_ = false;
     bool hasIp_           = false;
@@ -182,4 +156,4 @@ private:
     uint32_t lastDhcpAttemptAtMs_ = 0;
 };
 
-}  // namespace device::drivers
+}

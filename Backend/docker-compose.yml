@@ -1,0 +1,44 @@
+services:
+  api:
+    build:
+      context: .
+    environment:
+      APP_NAME: Warehouse NFC Backend
+      APP_ENV: docker
+      DEBUG: "false"
+      HOST: 0.0.0.0
+      PORT: 8000
+      POSTGRES_USER: warehouse
+      POSTGRES_PASSWORD: warehouse
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: warehouse
+      JWT_SECRET_KEY: change-me
+      JWT_ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      BACKEND_CORS_ORIGINS: http://localhost:19006,http://127.0.0.1:19006
+      SEED_DEMO_USER: "true"
+      DEMO_USER_EMAIL: demo@example.com
+      DEMO_USER_PASSWORD: demo123
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: warehouse
+      POSTGRES_USER: warehouse
+      POSTGRES_PASSWORD: warehouse
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

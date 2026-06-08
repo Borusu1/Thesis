@@ -30,9 +30,6 @@ public:
 
         SdProbeResult result;
 
-        // A single SD.begin() right after power-up often fails while the card's
-        // internal regulator is still settling. Retry a few times with SD.end()
-        // and a growing back-off before giving up.
         bool mounted = false;
         for (uint8_t attempt = 1; attempt <= kMountAttempts; ++attempt) {
             if (SD.begin(device::board::SD_CS, spiBus_, kSpiHz)) {
@@ -96,4 +93,4 @@ private:
     SPIClass spiBus_;
 };
 
-}  // namespace device::drivers
+}

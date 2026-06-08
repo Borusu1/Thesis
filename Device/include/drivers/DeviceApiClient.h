@@ -271,7 +271,7 @@ private:
             : network_->activeClient();
 
         HttpClient http(*client, parsed.host, parsed.port);
-        http.connectionKeepAlive();  // reuse TCP connection — skips handshake on next request
+        http.connectionKeepAlive();
         http.setTimeout(2000);
 
         http.beginRequest();
@@ -284,7 +284,7 @@ private:
 
         lastHttpCode_ = http.responseStatusCode();
         if (lastHttpCode_ > 0) responseBody = http.responseBody();
-        // stop() only on transport error — valid HTTP responses keep the connection alive
+
         if (lastHttpCode_ < 0) http.stop();
         network_->restoreSpi();
 
@@ -305,7 +305,7 @@ private:
             : network_->activeClient();
 
         HttpClient http(*client, parsed.host, parsed.port);
-        http.connectionKeepAlive();  // reuse TCP connection — skips handshake on next request
+        http.connectionKeepAlive();
         http.setTimeout(2000);
 
         http.beginRequest();
@@ -322,7 +322,7 @@ private:
 
         lastHttpCode_ = http.responseStatusCode();
         if (lastHttpCode_ > 0) responseBody = http.responseBody();
-        // stop() only on transport error — valid HTTP responses keep the connection alive
+
         if (lastHttpCode_ < 0) http.stop();
         network_->restoreSpi();
 
@@ -330,4 +330,4 @@ private:
     }
 };
 
-}  // namespace device::drivers
+}

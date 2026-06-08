@@ -74,4 +74,4 @@ private:
     uint32_t pressedAtMs_ = 0;
 };
 
-}  // namespace device::domain
+}

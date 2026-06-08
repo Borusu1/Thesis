@@ -34,13 +34,11 @@ public:
         lastAttemptAtMs_ = nowMs;
     }
 
-    // Fully power down the WiFi radio. Required before any Ethernet (W5200)
-    // activity: a running WiFi STA jams the W5200's packet reception.
     void stop() {
         if (!started_) {
             return;
         }
-        WiFi.disconnect(true, false);  // disconnect and switch the radio off
+        WiFi.disconnect(true, false);
         WiFi.mode(WIFI_OFF);
         started_ = false;
     }
@@ -63,4 +61,4 @@ private:
     device::domain::DeviceBootstrapConfig config_ {};
 };
 
-}  // namespace device::drivers
+}

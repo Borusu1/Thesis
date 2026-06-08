@@ -11,10 +11,6 @@
 #include "ScreenLookup.h"
 #include "ScreenProvision.h"
 
-// ---------------------------------------------------------------------------
-// Global variable definitions (external linkage — extern'd in AppGlobals.h)
-// ---------------------------------------------------------------------------
-
 device::app::AppController g_controller;
 device::drivers::ButtonDriver g_buttons;
 device::drivers::BootstrapConfigStore g_bootstrapStore;
@@ -44,10 +40,6 @@ device::ui::Screen g_lastRenderedScreen = device::ui::Screen::BootDiagnostics;
 uint32_t g_lastModeMenuSignature = 0;
 device::ui::Screen g_lastLoggedScreen = device::ui::Screen::BootDiagnostics;
 
-// ---------------------------------------------------------------------------
-// Sync-status screen button handler (only called from loop)
-// ---------------------------------------------------------------------------
-
 static bool handleSyncStatusButtonEvent(const device::domain::ButtonEvent& event) {
     if (event.type == device::domain::ButtonPressType::LongPress && event.button == device::config::Button::Ok) {
         g_controller.setScreen(device::ui::Screen::ModeMenu);
@@ -76,10 +68,6 @@ static bool handleSyncStatusButtonEvent(const device::domain::ButtonEvent& event
     syncNextPendingOperation(millis(), true);
     return true;
 }
-
-// ---------------------------------------------------------------------------
-// setup / loop
-// ---------------------------------------------------------------------------
 
 void setup() {
     Serial.begin(115200);
@@ -125,7 +113,6 @@ void setup() {
     startNetworkIfConfigured();
     runNetworkMaintenance(millis());
 
-    // Append network result to boot diagnostics screen, then briefly show it
     if (g_network.isEthernetConnected()) {
         char buf[48] {};
         snprintf(buf, sizeof(buf), "ETH OK  %s", g_network.localIp().toString().c_str());

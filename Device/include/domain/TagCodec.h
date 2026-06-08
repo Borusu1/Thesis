@@ -194,4 +194,4 @@ public:
     }
 };
 
-}  // namespace device::domain
+}

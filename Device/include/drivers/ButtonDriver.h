@@ -48,4 +48,4 @@ private:
     std::array<device::domain::ButtonInterpreter, 3> interpreters_ {};
 };
 
-}  // namespace device::drivers
+}

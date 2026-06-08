@@ -132,7 +132,6 @@ device::domain::DiagnosticsSnapshot runDiagnostics(bool displayOk) {
     Serial.printf("[diag] catalog: %lu product(s) in local DB\n",
         static_cast<unsigned long>(g_catalogStatus.totalProducts));
 
-    // Ethernet probe — SPI switches to ETH pins during init, restored after
     Serial.println("[diag] eth: probing WIZ820io (W5200) via FSPI...");
     Serial.println("[diag] eth: pins — MOSI=37 SCK=36 MISO=39 CS=40 INT=42 RST=41");
     snapshot.addDetailLine("ETH: probing WIZ820io...");
@@ -140,7 +139,7 @@ device::domain::DiagnosticsSnapshot runDiagnostics(bool displayOk) {
 
     const uint32_t ethStartMs = millis();
     const bool ethOk = g_network.beginEthernet();
-    // Remove the "probing..." placeholder line
+
     if (snapshot.detailCount > 0) {
         snapshot.detailLines[snapshot.detailCount - 1].clear();
         --snapshot.detailCount;

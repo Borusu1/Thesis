@@ -13,12 +13,6 @@ void startNetworkIfConfigured() {
         return;
     }
 
-    // Remember WiFi credentials for fallback, but do NOT start WiFi here.
-    // A live/scanning WiFi STA jams the W5200's packet reception, so Ethernet
-    // and WiFi can never run at the same time. NetworkManager::maintain() owns
-    // the switching: it keeps WiFi off while Ethernet is the active link and
-    // only brings WiFi up (and periodically probes Ethernet in a quiet RF
-    // window) when Ethernet is unavailable.
     g_network.setWifiConfig(g_bootstrapConfig);
 
     if (g_network.isEthernetConnected()) {
@@ -44,7 +38,7 @@ bool syncProductsFromBackend(uint32_t nowMs, bool force) {
     g_networkStatus.syncInProgress = true;
     g_controller.updateNetworkStatus(g_networkStatus);
     Serial.printf("[sync] product sync started force=%d\n", force ? 1 : 0);
-    renderCurrentScreen();  // show "Sync in progress" before SPI switches to ETH
+    renderCurrentScreen();
 
     std::array<device::domain::ProductRecord, device::config::kMaxRecentProducts> products {};
     std::size_t count = 0;
@@ -101,10 +95,6 @@ bool runNetworkMaintenance(uint32_t nowMs) {
         currentScreen == device::ui::Screen::ModeMenu ||
         currentScreen == device::ui::Screen::SyncStatus;
 
-    // Only (re)connect from the main menu. Inside a working mode this would
-    // otherwise block the UI for seconds on each Ethernet DHCP probe, making
-    // offline work laggy. The interface state is left untouched in other
-    // screens, so already-established links keep working.
     if (currentScreen == device::ui::Screen::ModeMenu) {
         g_network.maintain(nowMs);
     }
@@ -150,7 +140,7 @@ bool runNetworkMaintenance(uint32_t nowMs) {
         g_lastAuthAttemptAtMs = nowMs;
         g_networkStatus.detail.assign("Authenticating...");
         g_controller.updateNetworkStatus(g_networkStatus);
-        renderCurrentScreen();  // show "Authenticating..." before SPI switches to ETH
+        renderCurrentScreen();
         FixedString<48> detail;
         const bool previousAuth = g_networkStatus.deviceAuthenticated;
         const auto previousDetail = g_networkStatus.detail;
@@ -220,7 +210,7 @@ bool syncNextPendingOperation(uint32_t nowMs, bool force) {
     g_syncStatus.inProgress = true;
     g_syncStatus.lastError.clear();
     updateControllerStatus();
-    renderCurrentScreen();  // show "Sync in progress" before SPI switches to ETH
+    renderCurrentScreen();
 
     FixedString<48> detail;
     const bool ok = g_apiClient.syncInventoryOperation(

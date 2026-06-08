@@ -34,17 +34,21 @@ temp_docx/
 .env.local
 *.env
 
-# Exclude other subprojects
-Backend/
-Frontend/
+# Build / coverage artifacts (Frontend)
+dist-cloud-test/
+coverage/
+android/
 
 # Claude / Playwright
 .claude/
 .playwright-cli/
 
-# PDFs and Word docs
+# PDFs, Word docs & presentations
 *.pdf
 *.docx
+*.doc
+*.pptx
+*.potx
 *.drawio
 
 # Diagrams folder

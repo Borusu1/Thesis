@@ -66,7 +66,7 @@ public:
         if (snapshot.ethernetOk) {
             return DiagnosticsRowState::Ok;
         }
-        // Only mark Fail once DB passed (meaning ETH probe was actually attempted)
+
         if (snapshot.dbOk) {
             return DiagnosticsRowState::Fail;
         }
@@ -93,4 +93,4 @@ private:
     }
 };
 
-}  // namespace device::ui
+}

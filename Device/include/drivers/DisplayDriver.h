@@ -250,7 +250,7 @@ private:
     }
 
     void drawDetailLines(const device::domain::DiagnosticsSnapshot& snapshot, std::size_t detailOffset) {
-        // 6 status rows × 16 px = 96 px → divider at kBodyTop+96 = 134
+
         tft_.drawFastHLine(0, 134, 320, ILI9341_DARKGREY);
         tft_.setTextSize(1);
         tft_.setTextColor(ILI9341_CYAN);
@@ -1265,4 +1265,4 @@ private:
     Adafruit_ILI9341 tft_ {device::board::TFT_CS, device::board::TFT_DC, device::board::TFT_RST};
 };
 
-}  // namespace device::drivers
+}

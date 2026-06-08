@@ -34,7 +34,7 @@ public:
             return false;
         }
 
-        if (!exec("PRAGMA journal_mode=DELETE;") || !exec("PRAGMA synchronous=NORMAL;")) {
+        if (!exec("PRAGMA journal_mode=DELETE;") || !exec("PRAGMA synchronous=FULL;")) {
             setInitError(status, "pragma failed");
             return false;
         }
@@ -108,23 +108,29 @@ public:
             return false;
         }
 
-        // Use a single timestamp for all upserts so products not in this batch
-        // have an older updated_at_ms and can be deactivated after the loop.
-        const uint32_t syncStartMs = millis();
+        const uint32_t prevGen = static_cast<uint32_t>(queryMetaInt("product_sync_gen").value_or(0));
+
+        if (prevGen == 0 && !exec("UPDATE products SET updated_at_ms = 0;")) {
+            status.lastError.assign("Product migrate failed");
+            return false;
+        }
+        const uint32_t syncGen = prevGen + 1;
+        if (!setMetaInt("product_sync_gen", syncGen)) {
+            status.lastError.assign("Sync gen write failed");
+            return false;
+        }
 
         for (std::size_t index = 0; index < count; ++index) {
             if (!products[index].exists) {
                 continue;
             }
-            if (!upsertProduct(products[index].productId, products[index].sku, products[index].name.c_str(), products[index].isActive, syncStartMs)) {
+            if (!upsertProduct(products[index].productId, products[index].sku, products[index].name.c_str(), products[index].isActive, syncGen)) {
                 status.lastError.assign("Product insert failed");
                 return false;
             }
             ++status.totalProducts;
         }
 
-        // Deactivate products that were not present in this sync batch.
-        // Products from this batch have updated_at_ms == syncStartMs; older ones are stale.
         sqlite3_stmt* deactivateStmt = nullptr;
         static constexpr const char* kDeactivateSql =
             "UPDATE products SET is_active = 0 WHERE updated_at_ms < ?;";
@@ -133,7 +139,7 @@ public:
             status.lastError.assign("Product cleanup failed");
             return false;
         }
-        sqlite3_bind_int(deactivateStmt, 1, static_cast<int>(syncStartMs));
+        sqlite3_bind_int(deactivateStmt, 1, static_cast<int>(syncGen));
         if (!finalizeStep(deactivateStmt)) {
             status.lastError.assign("Product cleanup failed");
             return false;
@@ -1020,7 +1026,7 @@ private:
                 return false;
             }
             if (!exec("ALTER TABLE inventory_operations ADD COLUMN sku INTEGER NOT NULL DEFAULT 0;")) {
-                // Ignore if column already exists.
+
             }
             if (!setMetaInt("schema_version", 3)) {
                 return false;
@@ -1181,27 +1187,16 @@ private:
             return false;
         }
 
-        char sql[96] {};
-        const int written = snprintf(sql, sizeof(sql), "PRAGMA table_info(%s);", tableName);
+        char sql[128] {};
+        const int written = snprintf(sql, sizeof(sql), "SELECT \"%s\" FROM \"%s\" LIMIT 0;", columnName, tableName);
         if (written <= 0 || written >= static_cast<int>(sizeof(sql))) {
             return false;
         }
 
         sqlite3_stmt* stmt = nullptr;
-        if (sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-            return false;
-        }
-
-        bool found = false;
-        while (sqlite3_step(stmt) == SQLITE_ROW) {
-            const auto* value = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-            if (value != nullptr && std::strcmp(value, columnName) == 0) {
-                found = true;
-                break;
-            }
-        }
+        const bool ok = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr) == SQLITE_OK;
         sqlite3_finalize(stmt);
-        return found;
+        return ok;
     }
 
     bool rebuildProductsTable() {
@@ -1454,4 +1449,4 @@ private:
     bool resetMarkerNeedsPersist_ = false;
 };
 
-}  // namespace device::drivers
+}

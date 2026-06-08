@@ -129,4 +129,4 @@ private:
     std::size_t size_ = 0;
 };
 
-}  // namespace device::domain
+}

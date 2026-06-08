@@ -298,7 +298,7 @@ void test_sync_state_transitions() {
     assert(controller.stateMachine().currentScreen() == device::ui::Screen::ModeMenu);
 }
 
-}  // namespace
+}
 
 int main() {
     test_uuid_normalization_and_ndef_round_trip();

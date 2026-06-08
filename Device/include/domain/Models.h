@@ -297,7 +297,7 @@ struct DeviceBootstrapConfig {
 struct NetworkStatusSnapshot {
     bool configLoaded = false;
     bool ethernetConnected = false;
-    bool wifiConnected = false;  // true = any network connected (ETH or WiFi)
+    bool wifiConnected = false;
     bool deviceAuthenticated = false;
     bool productSyncOk = false;
     bool operatorAuthenticated = false;
@@ -824,4 +824,4 @@ inline const char* toString(DeviceEventSeverity severity) {
     }
 }
 
-}  // namespace device::domain
+}

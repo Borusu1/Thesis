@@ -1,0 +1,14 @@
+.git
+.gitignore
+.expo
+.vscode
+node_modules
+coverage
+dist
+dist-cloud-test
+test-results
+playwright-report
+android
+ios
+.env
+npm-debug.log*

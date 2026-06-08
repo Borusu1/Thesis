@@ -337,4 +337,4 @@ private:
     ModeMenuSelection modeMenuSelection_ = ModeMenuSelection::Lookup;
 };
 
-}  // namespace device::ui
+}
