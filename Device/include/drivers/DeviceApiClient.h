@@ -225,6 +225,25 @@ private:
         bool https = false;
     };
 
+    // Read the response body without relying on the library's Content-Length
+    // handling: uvicorn sends "content-length" in lowercase and
+    // ArduinoHttpClient matches it case-sensitively, so responseBody() never
+    // learns the length and blocks for the full read timeout (~2 s per call).
+    // Every request is sent with "Connection: close", so the server closes the
+    // socket right after the body — read until that close instead, with a short
+    // idle guard only as a safety net.
+    static void readResponseBody(HttpClient& http, String& out) {
+        http.skipResponseHeaders();
+        out = "";
+        uint32_t lastDataMs = millis();
+        while ((http.connected() || http.available()) && (millis() - lastDataMs) < 500) {
+            if (http.available()) {
+                out += static_cast<char>(http.read());
+                lastDataMs = millis();
+            }
+        }
+    }
+
     static ParsedUrl parseBaseUrl(std::string_view url) {
         ParsedUrl result;
         const String s(url.data(), static_cast<unsigned int>(url.size()));
@@ -270,24 +289,38 @@ private:
             ? network_->activeSecureClient()
             : network_->activeClient();
 
-        HttpClient http(*client, parsed.host, parsed.port);
-        http.connectionKeepAlive();
-        http.setTimeout(2000);
+        // The W5200 TCP handshake misses often on this wiring/path, so a single
+        // connect frequently fails even though the network is fine (DHCP works
+        // because it retries internally for 8s). Retry the whole request until
+        // the connect lands and the backend answers. Each request uses a fresh
+        // "Connection: close" connection so the body read ends cleanly on EOF.
+        client->setTimeout(device::config::kHttpConnectAttemptTimeoutMs);
+        lastHttpCode_ = -1;
+        for (uint32_t attempt = 0; attempt < device::config::kHttpConnectAttempts; ++attempt) {
+            HttpClient http(*client, parsed.host, parsed.port);
+            http.setTimeout(2000);
+            http.setHttpResponseTimeout(5000);
 
-        http.beginRequest();
-        http.get(path);
-        if (!bearerToken.empty()) {
-            http.sendHeader("Authorization",
-                String("Bearer ") + String(bearerToken.data(), bearerToken.size()));
+            http.beginRequest();
+            if (http.get(path) != 0) {        // connect miss — retry
+                http.stop();
+                delay(40);
+                continue;
+            }
+            if (!bearerToken.empty()) {
+                http.sendHeader("Authorization",
+                    String("Bearer ") + String(bearerToken.data(), bearerToken.size()));
+            }
+            http.endRequest();
+
+            lastHttpCode_ = http.responseStatusCode();
+            if (lastHttpCode_ > 0) readResponseBody(http, responseBody);
+            http.stop();
+
+            if (lastHttpCode_ > 0) break;     // reached the backend — done
+            delay(40);                        // transport error — retry
         }
-        http.endRequest();
-
-        lastHttpCode_ = http.responseStatusCode();
-        if (lastHttpCode_ > 0) responseBody = http.responseBody();
-
-        if (lastHttpCode_ < 0) http.stop();
         network_->restoreSpi();
-
         return lastHttpCode_;
     }
 
@@ -304,12 +337,31 @@ private:
             ? network_->activeSecureClient()
             : network_->activeClient();
 
+        // No keep-alive: each request uses a fresh connection with
+        // "Connection: close". On the LAN a TCP handshake costs ~1 ms, while
+        // keep-alive caused the server-closed socket to look half-open to the
+        // W5200 — every request then either stalled for the full stream timeout
+        // (~2 s waiting for an EOF that never came) or hung 30 s on a dead
+        // socket. With close, the server ends the response and we get EOF at once.
+        // Give the W5200 up to ~3.5s to finish the TCP handshake instead of the
+        // 1s default — on a lossy/slow path the connect needs several SYN
+        // retransmissions to land (DHCP survives for the same reason).
+        client->setTimeout(3500);
         HttpClient http(*client, parsed.host, parsed.port);
-        http.connectionKeepAlive();
         http.setTimeout(2000);
+        http.setHttpResponseTimeout(5000);  // bound a stalled response (was 30s)
 
         http.beginRequest();
-        http.post(path);
+        const int reqErr = http.post(path);
+        if (reqErr != 0) {
+            // Connect failed — fail fast instead of waiting out the response
+            // timeout. The W5200 connect intermittently misses (e.g. ARP not yet
+            // resolved); the op stays queued and the next retry usually lands.
+            http.stop();
+            network_->restoreSpi();
+            lastHttpCode_ = reqErr;
+            return reqErr;
+        }
         http.sendHeader("Content-Type", "application/json");
         http.sendHeader("Content-Length", String(requestBody.length()));
         if (!bearerToken.empty()) {
@@ -321,9 +373,9 @@ private:
         http.endRequest();
 
         lastHttpCode_ = http.responseStatusCode();
-        if (lastHttpCode_ > 0) responseBody = http.responseBody();
+        if (lastHttpCode_ > 0) readResponseBody(http, responseBody);
 
-        if (lastHttpCode_ < 0) http.stop();
+        http.stop();  // always close — frees the W5200 socket, no leak
         network_->restoreSpi();
 
         return lastHttpCode_;

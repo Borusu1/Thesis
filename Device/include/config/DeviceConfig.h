@@ -7,19 +7,34 @@ namespace device::config {
 
 constexpr const char* kFirmwareName = "warehouse-terminal";
 constexpr const char* kFirmwareVersion = "0.6.2";
+
+// Master switch for the WiFi fallback link. When false the device never
+// starts the WiFi radio and never issues requests over WiFi — it works over
+// Ethernet only (or fully offline). Set back to true to re-enable WiFi.
+constexpr bool kWifiEnabled = false;
+
 constexpr const char* kDefaultWifiSsid = "off_Bodnar_iot";
 constexpr const char* kDefaultWifiPassword = "0664995352";
-constexpr const char* kDefaultApiBaseUrl = "http://192.168.110.223:8000/api/v1";
+constexpr const char* kDefaultApiBaseUrl = "http://192.168.110.187:8000/api/v1";
 constexpr const char* kDeviceIdPrefix = "esp32s3-";
 constexpr uint32_t kDefaultProductSyncIntervalMs = 300000UL;
 constexpr uint32_t kDefaultOperationSyncIntervalMs = 15000UL;
 constexpr uint32_t kHttpConnectTimeoutMs = 900UL;
 constexpr uint32_t kHttpRequestTimeoutMs = 1200UL;
+// The W5200 TCP handshake is flaky on this wiring/path: a single connect often
+// misses. Retry the connect this many times within one request so it reliably
+// lands and the request actually reaches the backend.
+constexpr uint32_t kHttpConnectAttempts = 12UL;
+constexpr uint32_t kHttpConnectAttemptTimeoutMs = 800UL;
 
 constexpr uint32_t kOperatorSessionTimeoutMs = 5UL * 60UL * 1000UL;
 constexpr uint32_t kLongPressThresholdMs = 700UL;
 constexpr uint32_t kDebounceMs = 50UL;
 constexpr uint32_t kSyncBackoffBaseMs = 2000UL;
+// Retry interval after a transport miss (connect/timeout) — fast, because the
+// request never reached the backend; the exponential backoff above is reserved
+// for genuine backend rejections.
+constexpr uint32_t kOperationTransportRetryMs = 3000UL;
 constexpr uint32_t kHeartbeatIntervalMs = 500UL;
 constexpr uint32_t kNfcPollTimeoutMs = 40UL;
 constexpr uint8_t kNfcPageWriteRetries = 3;

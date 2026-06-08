@@ -190,7 +190,25 @@ bool syncNextPendingOperation(uint32_t nowMs, bool force) {
         return false;
     }
 
+    // Remembers whether the previous attempt failed before reaching the backend
+    // (connect/timeout, code < 0). Such transport misses are transient network
+    // hiccups, not backend rejections, so they retry quickly instead of falling
+    // into the exponential backoff meant for a backend that is actually failing.
+    static bool s_lastOpSyncTransportError = false;
+
     const auto& operation = operations[0];
+    // Backoff gate first — this runs every loop while an op is pending, so do
+    // NOT log before it or the serial floods with one line per iteration.
+    const uint32_t cappedAttempts = operation.syncAttemptCount > 4 ? 4 : operation.syncAttemptCount;
+    const uint32_t backoffMs = s_lastOpSyncTransportError
+        ? device::config::kOperationTransportRetryMs
+        : (device::config::kSyncBackoffBaseMs << cappedAttempts);
+    if (!force && g_lastOperationSyncAttemptAtMs != 0 &&
+        nowMs - g_lastOperationSyncAttemptAtMs < backoffMs) {
+        return false;
+    }
+
+    g_lastOperationSyncAttemptAtMs = nowMs;
     Serial.printf(
         "[sync] pending op type=%s id=%s attempts=%u pending=%lu force=%d\n",
         device::domain::toString(operation.operationType),
@@ -199,14 +217,6 @@ bool syncNextPendingOperation(uint32_t nowMs, bool force) {
         static_cast<unsigned long>(g_syncStatus.pendingCount),
         force ? 1 : 0
     );
-    const uint32_t cappedAttempts = operation.syncAttemptCount > 4 ? 4 : operation.syncAttemptCount;
-    const uint32_t backoffMs = device::config::kSyncBackoffBaseMs << cappedAttempts;
-    if (!force && g_lastOperationSyncAttemptAtMs != 0 &&
-        nowMs - g_lastOperationSyncAttemptAtMs < backoffMs) {
-        return false;
-    }
-
-    g_lastOperationSyncAttemptAtMs = nowMs;
     g_syncStatus.inProgress = true;
     g_syncStatus.lastError.clear();
     updateControllerStatus();
@@ -221,6 +231,7 @@ bool syncNextPendingOperation(uint32_t nowMs, bool force) {
     );
 
     g_syncStatus.inProgress = false;
+    s_lastOpSyncTransportError = !ok && g_apiClient.lastHttpCode() < 0;
     if (ok) {
         g_journal.markOperationSynced(operation.clientOperationId.view(), nowMs);
         Serial.printf("[sync] op synced id=%s\n", operation.clientOperationId.c_str());

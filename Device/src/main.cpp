@@ -136,9 +136,12 @@ void setup() {
     Serial.printf("[boot] diagnostics result: %s (code=%d)\n",
         bootOk ? "PASS" : "FAIL",
         static_cast<int>(g_snapshot.failureCode));
+    // Report the real per-interface state. Note g_networkStatus.wifiConnected
+    // is actually an "any network up" flag (eth || wifi), so query the radios
+    // directly here to avoid showing wifi=up while running purely on Ethernet.
     Serial.printf("[boot] network: eth=%s  wifi=%s  auth=%s\n",
-        g_networkStatus.ethernetConnected ? "up" : "down",
-        g_networkStatus.wifiConnected     ? "up" : "down",
+        g_network.isEthernetConnected() ? "up" : "down",
+        g_network.isWifiConnected()     ? "up" : "down",
         g_networkStatus.deviceAuthenticated ? "ok" : "pending");
     Serial.printf("[boot] heap after init: %lu KB free\n",
         (unsigned long)(ESP.getFreeHeap() / 1024));

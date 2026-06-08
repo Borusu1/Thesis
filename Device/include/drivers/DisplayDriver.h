@@ -818,6 +818,14 @@ private:
     }
 
     void drawShipmentDetails(const device::domain::ShipmentSnapshot& snapshot, std::size_t detailOffset) {
+        // The quantity editor (digit boxes + SAVE button) occupies y=126..184 during
+        // QuantityInput, which is the same band this details section would use. Skip it
+        // to avoid the text overlapping the editor — SKU/product/remain are already shown
+        // in the summary block above.
+        if (snapshot.stage == device::domain::ShipmentStage::QuantityInput) {
+            return;
+        }
+
         tft_.drawFastHLine(0, 142, 320, ILI9341_DARKGREY);
         tft_.setTextSize(1);
         tft_.setTextColor(ILI9341_CYAN);

@@ -6,6 +6,7 @@
 #include "drivers/EthernetManager.h"
 #include "drivers/WifiManager.h"
 #include "domain/Models.h"
+#include "config/DeviceConfig.h"
 
 namespace device::drivers {
 
@@ -49,7 +50,10 @@ public:
             }
         }
 
-        if (wifiConfig_ != nullptr) {
+        // Ethernet still unavailable — use WiFi as the fallback link, unless
+        // WiFi is disabled, in which case stay Ethernet-only / fully offline
+        // (never start the radio, never send a request over it).
+        if (device::config::kWifiEnabled && wifiConfig_ != nullptr) {
             if (!wifi_.isStarted()) {
                 wifi_.begin(*wifiConfig_);
                 wifiEverStarted_ = true;

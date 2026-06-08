@@ -42,6 +42,14 @@
         {
           "nfcPermission": "Scan NFC tags to find warehouse items."
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
       ]
     ],
     "experiments": {
