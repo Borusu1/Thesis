@@ -95,7 +95,12 @@ bool runNetworkMaintenance(uint32_t nowMs) {
         currentScreen == device::ui::Screen::ModeMenu ||
         currentScreen == device::ui::Screen::SyncStatus;
 
-    if (currentScreen == device::ui::Screen::ModeMenu) {
+    // Gating to the main menu only matters for Ethernet: its DHCP probe blocks
+    // for seconds and would make working modes laggy (see 498c048). WiFi
+    // connect/maintain is async and never blocks, so when Ethernet is disabled
+    // there is nothing to gate — run it every loop so WiFi comes up and stays
+    // up regardless of which screen the operator is on.
+    if (currentScreen == device::ui::Screen::ModeMenu || !device::config::kEthernetEnabled) {
         g_network.maintain(nowMs);
     }
 

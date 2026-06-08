@@ -132,6 +132,14 @@ device::domain::DiagnosticsSnapshot runDiagnostics(bool displayOk) {
     Serial.printf("[diag] catalog: %lu product(s) in local DB\n",
         static_cast<unsigned long>(g_catalogStatus.totalProducts));
 
+    if (!device::config::kEthernetEnabled) {
+        Serial.println("[diag] eth: disabled in config — skipping probe");
+        snapshot.ethernetOk = false;
+        snapshot.addDetailLine("ETH: disabled");
+        g_display.renderDiagnostics(snapshot, device::ui::Screen::BootDiagnostics, 0);
+        return snapshot;
+    }
+
     Serial.println("[diag] eth: probing WIZ820io (W5200) via FSPI...");
     Serial.println("[diag] eth: pins — MOSI=37 SCK=36 MISO=39 CS=40 INT=42 RST=41");
     snapshot.addDetailLine("ETH: probing WIZ820io...");

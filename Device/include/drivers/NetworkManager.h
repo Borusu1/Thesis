@@ -14,6 +14,7 @@ class NetworkManager {
 public:
 
     bool beginEthernet() {
+        if (!device::config::kEthernetEnabled) return false;
         return eth_.begin();
     }
 
@@ -22,35 +23,37 @@ public:
     }
 
     void maintain(uint32_t nowMs) {
-        if (eth_.isConnected()) {
-            if (wifi_.isStarted()) {
-                wifi_.stop();
-            }
-            eth_.maintain(nowMs);
-            return;
-        }
-
-        if (eth_.hardwarePresent() &&
-            (lastEthProbeAtMs_ == 0 || nowMs - lastEthProbeAtMs_ >= kEthProbeIntervalMs)) {
-            lastEthProbeAtMs_ = nowMs;
-            if (wifi_.isStarted()) {
-                wifi_.stop();
-
-                delay(300);
-            }
-            if (eth_.forceReacquire()) {
-
-                if (wifiEverStarted_) {
-                    Serial.println("[net] ETH recovered after WiFi — restarting for a clean Ethernet stack");
-                    Serial.flush();
-                    delay(50);
-                    ESP.restart();
+        if (device::config::kEthernetEnabled) {
+            if (eth_.isConnected()) {
+                if (wifi_.isStarted()) {
+                    wifi_.stop();
                 }
+                eth_.maintain(nowMs);
                 return;
             }
+
+            if (eth_.hardwarePresent() &&
+                (lastEthProbeAtMs_ == 0 || nowMs - lastEthProbeAtMs_ >= kEthProbeIntervalMs)) {
+                lastEthProbeAtMs_ = nowMs;
+                if (wifi_.isStarted()) {
+                    wifi_.stop();
+
+                    delay(300);
+                }
+                if (eth_.forceReacquire()) {
+
+                    if (wifiEverStarted_) {
+                        Serial.println("[net] ETH recovered after WiFi — restarting for a clean Ethernet stack");
+                        Serial.flush();
+                        delay(50);
+                        ESP.restart();
+                    }
+                    return;
+                }
+            }
         }
 
-        // Ethernet still unavailable — use WiFi as the fallback link, unless
+        // Ethernet disabled or still unavailable — use WiFi as the fallback link, unless
         // WiFi is disabled, in which case stay Ethernet-only / fully offline
         // (never start the radio, never send a request over it).
         if (device::config::kWifiEnabled && wifiConfig_ != nullptr) {

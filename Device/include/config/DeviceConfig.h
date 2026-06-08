@@ -11,11 +11,19 @@ constexpr const char* kFirmwareVersion = "0.6.2";
 // Master switch for the WiFi fallback link. When false the device never
 // starts the WiFi radio and never issues requests over WiFi — it works over
 // Ethernet only (or fully offline). Set back to true to re-enable WiFi.
-constexpr bool kWifiEnabled = false;
+constexpr bool kWifiEnabled = true;
 
-constexpr const char* kDefaultWifiSsid = "off_Bodnar_iot";
-constexpr const char* kDefaultWifiPassword = "0664995352";
-constexpr const char* kDefaultApiBaseUrl = "http://192.168.110.187:8000/api/v1";
+// Master switch for the Ethernet (W5200) link. When false the device never
+// touches the Ethernet hardware — no reset pulse, no SPI probe, no DHCP
+// attempts at boot or during maintenance — so a missing/faulty W5200 can
+// never slow down or block the rest of the app. The device then runs over
+// WiFi only (or fully offline, if WiFi is also disabled). Set back to true
+// to re-enable Ethernet.
+constexpr bool kEthernetEnabled = false;
+
+constexpr const char* kDefaultWifiSsid = "Pixel_8808";
+constexpr const char* kDefaultWifiPassword = "passbodnar55";
+constexpr const char* kDefaultApiBaseUrl = "http://10.200.171.195:8000/api/v1";
 constexpr const char* kDeviceIdPrefix = "esp32s3-";
 constexpr uint32_t kDefaultProductSyncIntervalMs = 300000UL;
 constexpr uint32_t kDefaultOperationSyncIntervalMs = 15000UL;
