@@ -61,7 +61,16 @@ public:
                 wifi_.begin(*wifiConfig_);
                 wifiEverStarted_ = true;
             }
+            const uint32_t maintainStartMs = millis();
             wifi_.ensureConnected(nowMs);
+            const uint32_t maintainElapsedMs = millis() - maintainStartMs;
+            if (maintainElapsedMs >= 20) {
+                // ensureConnected is normally a status check (sub-ms); a spike
+                // here means it kicked off a reconnect — that's a window where
+                // the radio is busy and SPI peripherals can get glitched.
+                Serial.printf("[net] wifi maintain took %lums (likely reconnect)\n",
+                    static_cast<unsigned long>(maintainElapsedMs));
+            }
         }
     }
 

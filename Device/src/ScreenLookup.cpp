@@ -4,6 +4,8 @@
 #include "UiRender.h"
 #include "Boot.h"
 #include <Arduino.h>
+#include <WiFi.h>
+#include <esp_system.h>
 #include "config/DeviceConfig.h"
 
 void fillLookupSnapshot(const device::domain::NfcTagSnapshot& tagSnapshot, device::domain::LookupSnapshot& lookupSnapshot) {
@@ -106,6 +108,32 @@ void fillLookupSnapshot(const device::domain::NfcTagSnapshot& tagSnapshot, devic
 }
 
 void handleLookupNfcLoop() {
+    const uint32_t nowMsForLog = millis();
+    static uint32_t lastDiagLogMs = 0;
+    static uint32_t lastLoopMs = 0;
+    if (lastLoopMs != 0) {
+        const uint32_t gapMs = nowMsForLog - lastLoopMs;
+        if (gapMs >= 100) {
+            // Anything that makes loop() skip handleLookupNfcLoop for a while
+            // (blocking HTTP/sync, slow render, etc.) shows up here as a gap —
+            // the PN532 link can desync if it happens mid SPI transaction.
+            Serial.printf("[lookup] loop gap=%lums (something blocked the lookup loop)\n",
+                static_cast<unsigned long>(gapMs));
+        }
+    }
+    lastLoopMs = nowMsForLog;
+
+    if (nowMsForLog - lastDiagLogMs >= 1000) {
+        lastDiagLogMs = nowMsForLog;
+        const wl_status_t wifiStatus = WiFi.status();
+        Serial.printf("[lookup] diag wifi_status=%d wifi_connected=%d rssi=%d heap=%lu frozen=%d\n",
+            static_cast<int>(wifiStatus),
+            g_network.isWifiConnected() ? 1 : 0,
+            g_network.isWifiConnected() ? WiFi.RSSI() : 0,
+            static_cast<unsigned long>(esp_get_free_heap_size()),
+            g_lookupFrozen ? 1 : 0);
+    }
+
     if (!g_lookupFrozen && g_nfc.pollTag(millis(), g_tagSnapshot)) {
         if (g_tagSnapshot.present) {
             Serial.printf("[lookup] tag polled chip=%s uuid=%s present=1\n",

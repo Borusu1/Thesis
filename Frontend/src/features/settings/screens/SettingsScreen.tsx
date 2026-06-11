@@ -14,22 +14,6 @@ export function SettingsScreen() {
   return (
     <AppScreen subtitle={t('settingsSubtitle')} title={t('settingsTitle')}>
       <AppCard>
-        <Text style={styles.sectionTitle}>{t('languageSectionTitle')}</Text>
-        <View style={styles.actionsRow}>
-          <AppButton
-            label={t('languageUkrainian')}
-            onPress={() => setLocale('uk')}
-            variant={locale === 'uk' ? 'primary' : 'secondary'}
-          />
-          <AppButton
-            label={t('languageEnglish')}
-            onPress={() => setLocale('en')}
-            variant={locale === 'en' ? 'primary' : 'secondary'}
-          />
-        </View>
-      </AppCard>
-
-      <AppCard>
         <Text style={styles.sectionTitle}>{t('accountSectionTitle')}</Text>
         <View style={styles.infoRow}>
           <Text style={styles.label}>{t('accountIdLabel')}</Text>
@@ -42,8 +26,6 @@ export function SettingsScreen() {
       </AppCard>
 
       <AppCard>
-        <Text style={styles.sectionTitle}>{t('appModeTitle')}</Text>
-        <Text style={styles.description}>{t('appModeDescription')}</Text>
         <AppButton label={t('signOut')} onPress={logout} variant="secondary" />
       </AppCard>
     </AppScreen>

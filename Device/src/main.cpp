@@ -299,8 +299,7 @@ void loop() {
         renderCurrentScreen();
     }
 
-    if ((g_controller.stateMachine().currentScreen() == device::ui::Screen::ModeMenu ||
-         g_controller.stateMachine().currentScreen() == device::ui::Screen::SyncStatus) &&
+    if (g_controller.stateMachine().currentScreen() == device::ui::Screen::ModeMenu &&
         syncNextPendingOperation(nowMs, false)) {
         renderCurrentScreen();
     }

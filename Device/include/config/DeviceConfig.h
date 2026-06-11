@@ -44,7 +44,7 @@ constexpr uint32_t kSyncBackoffBaseMs = 2000UL;
 // for genuine backend rejections.
 constexpr uint32_t kOperationTransportRetryMs = 3000UL;
 constexpr uint32_t kHeartbeatIntervalMs = 500UL;
-constexpr uint32_t kNfcPollTimeoutMs = 40UL;
+constexpr uint32_t kNfcPollTimeoutMs = 200UL;
 constexpr uint8_t kNfcPageWriteRetries = 3;
 constexpr uint32_t kDatabaseSchemaVersion = 5UL;
 constexpr uint32_t kDatabaseResetNonce = 20260329UL;

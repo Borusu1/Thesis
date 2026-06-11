@@ -12,6 +12,7 @@ public:
         config_ = config;
         started_ = true;
         WiFi.mode(WIFI_STA);
+        WiFi.setSleep(false);
         WiFi.begin(config_.wifiSsid.c_str(), config_.wifiPassword.c_str());
         lastAttemptAtMs_ = millis();
         lastLoggedStatus_ = WiFi.status();
@@ -43,8 +44,14 @@ public:
 
         Serial.printf("[wifi] retrying connect ssid=\"%s\" last_status=%s\n",
             config_.wifiSsid.c_str(), statusToString(status));
+        const uint32_t reconnectStartMs = millis();
         WiFi.disconnect(false, false);
+        WiFi.setSleep(false);
         WiFi.begin(config_.wifiSsid.c_str(), config_.wifiPassword.c_str());
+        // WiFi.disconnect()/begin() can briefly block on radio reconfiguration;
+        // if this overlaps a PN532 SPI transaction it can desync the link.
+        Serial.printf("[wifi] reconnect cycle took %lums\n",
+            static_cast<unsigned long>(millis() - reconnectStartMs));
         lastAttemptAtMs_ = nowMs;
     }
 

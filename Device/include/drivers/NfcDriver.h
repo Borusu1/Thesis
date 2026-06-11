@@ -5,6 +5,7 @@
 
 #include <Adafruit_PN532.h>
 #include <Arduino.h>
+#include <esp_system.h>
 
 #include "board/Pinout.h"
 #include "config/DeviceConfig.h"
@@ -66,6 +67,8 @@ public:
     void resetScanState() {
         tagPresentLatch_ = false;
         lastUidLength_ = 0;
+        consecutiveMisses_ = 0;
+        Serial.printf("[nfc] scan state reset (poll #%lu)\n", static_cast<unsigned long>(pollCount_));
     }
 
     bool pollTag(uint32_t nowMs, device::domain::NfcTagSnapshot& snapshot) {
@@ -76,12 +79,48 @@ public:
         uint8_t uid[7] {};
         uint8_t uidLength = 0;
         digitalWrite(device::board::TFT_CS, HIGH);
+
+        const uint32_t pollStartMs = millis();
         const bool found = nfc_.readPassiveTargetID(
             PN532_MIFARE_ISO14443A,
             uid,
             &uidLength,
             device::config::kNfcPollTimeoutMs
         );
+        const uint32_t pollElapsedMs = millis() - pollStartMs;
+
+        ++pollCount_;
+        if (found) {
+            consecutiveMisses_ = 0;
+        } else {
+            ++consecutiveMisses_;
+        }
+
+        // Heartbeat + anomaly logging: print every Nth poll, or any poll that
+        // burned most of its timeout budget (a sign the PN532 link is struggling).
+        const bool slowPoll = pollElapsedMs * 4 >= device::config::kNfcPollTimeoutMs * 3;
+        if (slowPoll || (pollCount_ % 25) == 0) {
+            Serial.printf("[nfc] poll #%lu found=%d elapsed=%lums timeout=%lums latch=%d misses=%lu heap=%lu\n",
+                static_cast<unsigned long>(pollCount_),
+                found ? 1 : 0,
+                static_cast<unsigned long>(pollElapsedMs),
+                static_cast<unsigned long>(device::config::kNfcPollTimeoutMs),
+                tagPresentLatch_ ? 1 : 0,
+                static_cast<unsigned long>(consecutiveMisses_),
+                static_cast<unsigned long>(esp_get_free_heap_size()));
+        }
+
+        // After a run of misses, ping the chip with a lightweight command to
+        // tell apart "PN532 stopped responding" (link desync) from
+        // "PN532 fine, just doesn't see a card" (RF/coupling issue).
+        if (consecutiveMisses_ > 0 && (consecutiveMisses_ % 40) == 0) {
+            const uint32_t probeStartMs = millis();
+            const uint32_t fw = nfc_.getFirmwareVersion();
+            Serial.printf("[nfc] chip-alive probe misses=%lu result=%s elapsed=%lums\n",
+                static_cast<unsigned long>(consecutiveMisses_),
+                fw != 0 ? "responding" : "NO_RESPONSE",
+                static_cast<unsigned long>(millis() - probeStartMs));
+        }
 
         if (!found) {
             if (!tagPresentLatch_) {
@@ -96,6 +135,10 @@ public:
         }
 
         if (tagPresentLatch_ && sameUid(uid, uidLength, lastUid_.data(), lastUidLength_)) {
+            Serial.printf("[nfc] poll #%lu found=1 same-uid=%s elapsed=%lums (no change, latch holds)\n",
+                static_cast<unsigned long>(pollCount_),
+                lastUidHex_.c_str(),
+                static_cast<unsigned long>(pollElapsedMs));
             return false;
         }
 
@@ -385,6 +428,8 @@ private:
     uint32_t lastProcessedAtMs_ = 0;
     bool tagPresentLatch_ = false;
     FixedString<32> lastUidHex_ {};
+    uint32_t pollCount_ = 0;
+    uint32_t consecutiveMisses_ = 0;
 };
 
 }
